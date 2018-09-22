@@ -1,0 +1,169 @@
+# 浅复制
+- 符合类型的复制(赋予引用类型的指针)[数组,对象]
+```
+var a = [1,2,3];
+var b = a;
+b.push(4);
+console.log(a);  //[1,2,3,4];
+```
+- Object.assign()
+# 深复制
+- 基本数据类型都是深复制
+```
+var a = '123';
+var b = a;      //复制a的副本赋予b
+console.log(b); //'123'
+a = '456';
+console.log(b); //'123'
+```
+# 实现深复制的三种办法
+- JSON.stringify() 转换为字符串
+- JSON.parse() 转换为对象
+```
+var a = {
+    b: 1,
+    c: {
+        d: 2,
+        e:3
+    },
+    fun:function() {
+        console.log(1);
+    }
+}
+var b =JSON.parse(JSON.stringify(a));
+
+//无法识别function和值为undefined
+{
+    b: 1,
+    c: {
+        d: 2,
+        e:3
+    }
+}
+```
+- JQ版本($.extend())
+[点这里](https://www.cnblogs.com/RascallySnake/archive/2010/05/07/1729563.html)
+```
+参数: boolean表示是否进行深层拷贝
+    最终的对象{}
+    需要copy的对象
+    var obj1 =   { name: "John", location: {city: "Boston",county:"USA"} }
+    var obj2 =   { last: "Resig", location: {state: "MA",county:"China"} }
+    var result=$.extend( true,  {},  obj1, obj2); 
+    
+    //此时改变obj1,obj2的属性也不会该百年result的值,因为是深层拷贝
+    result={name:"John",last:"Resig", location:{city:"Boston",state:"MA",county:"China"}}
+```
+- 利用循环遍历
+```
+
+
+        function deepClone(source) {
+            if (!source || typeof(source) != 'object') { //空或者是基本数据类型
+                return source;
+            }
+            var targetObj = source.constructor == Array ? [] : {};
+            for (var key in socurce) {
+                if (socurce[key] && typeof(socurce[key]) == 'object') {   //如果是对象,继续调用
+                    targetObj[key] == deepClone(socurce[key]);
+                } else {
+                    targetObj[key] == socurce[key];       //如果是普通的[key:value]直接赋值
+                }
+            }
+            return targetObj;
+        }
+```
+# 纯函数和非纯函数[look here](https://blog.csdn.net/c_kite/article/details/79138814)
+- 纯函数:通过显示方式和外界交换数据(确定的输入和确定的输出),一个函数的返回结果只依赖于它的参数，并且在执行过程里面没有副作用，我们就把这个函数叫做纯函数
+- 非纯函数:通过隐示方式和外界交换数据
+- 显示:函数和外界交换数据的方式只有通过函数参数和返回值
+- 隐示:函数通过参数和返回值以外的渠道，和外界进行数据交换。比如，读取全局变量，修改全局变量
+- 纯函数
+    + 不依赖外部变量
+    ```
+    var a = 5;
+    function A(b) {
+      return a + b;  //读取全局变量,a很容易被改变
+    }
+    A(5);    
+    ```
+    ```
+    const a = 5;
+    function A(b) {
+      return a + b;   //依赖外部变量,不纯
+    }
+    A(5);
+    ```
+    ```
+    const a = 5;
+    function A(a,b) {
+      return a + b;   //依赖外部变量
+    }
+    A(a,5);
+    ```
+    + 不产生副作用
+    ```
+    const a = 1
+    const foo = (obj, b) => {
+      obj.x = 2
+      return obj.x + b
+    }
+    const counter = { x: 1 }
+    foo(counter, 2) // => 4
+    counter.x // => 2
+    ```
+# 箭头函数的this问题
+- **箭头函数根本没有自己的this，导致内部的this就是外层代码块的this ;  箭头函数会默认帮我们绑定外层this的值，所以在箭头函数中this的值和外层的this是一样的**
+```
+const obj = {
+    a: function() { console.log(this) }    
+}
+obj.a()  //打出的是obj对象
+```
+```
+const obj = {
+    a: () => {
+        console.log(this)
+    }
+}
+obj.a()  //打出来的是window
+```
+
+- this不可以修改
+```
+const obj = {
+    a: () => {
+        console.log(this)
+    }
+}
+obj.a.call('123')  //打出来的结果依然是window对象
+```
+- setTimeOut()的this保持一致
+```
+const obj = {
+    a: function() {
+        console.log(this)
+        window.setTimeout(() => { 
+            console.log(this) 
+        }, 1000)
+    }
+}
+obj.a.call(obj)  //第一个this是obj对象，第二个this还是obj对象
+```
+## js中的连续赋值
+```
+var a = {n: 1}
+var b = a;
+a.x = a = {n: 2}
+console.log(a.x);  //undefined
+console.log(b.x);  //{n:2}
+```
+**运算符优先级,点运算优于赋值运算**
+1. 给a加上一个叫x的属性
+2. 给a.x申请一个栈地址，记录为A
+3. 把(a = {n:2})得到的堆地址放到A里面
+4. 现在要计算a = {n:2}了
+5. 给a申请一个栈地址，记为B
+6. 把{n:2}得到的堆地址放到B里面
+![image](C:/Users/linhongfeng/Pictures/%E6%96%B0%E5%BB%BA%E6%96%87%E4%BB%B6%E5%A4%B9%20%282%29/a.png)
+![image](C:/Users/linhongfeng/Pictures/%E6%96%B0%E5%BB%BA%E6%96%87%E4%BB%B6%E5%A4%B9%20%282%29/a1.png)
